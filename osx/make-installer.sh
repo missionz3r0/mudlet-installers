@@ -198,18 +198,32 @@ fi
 /usr/libexec/PlistBuddy -c "Add UTExportedTypeDeclarations:0:UTTypeConformsTo:0 string public.data" "${app}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add UTExportedTypeDeclarations:0:UTTypeConformsTo:1 string public.zip" "${app}/Contents/Info.plist"
 
+# Apple's timestamp service can be temporarily unavailable, so retry codesigning
+codesign_with_retry() {
+  local max_attempts=3
+  for i in $(seq 1 $max_attempts); do
+    if codesign "$@"; then
+      return 0
+    fi
+    echo "codesign attempt $i of $max_attempts failed, retrying in 15s..."
+    sleep 15
+  done
+  echo "codesign failed after $max_attempts attempts"
+  return 1
+}
+
 # Sign everything now that we're done modifying contents of the .app file
 # Keychain is already setup in travis.osx.after_success.sh for us
 if [ -n "$IDENTITY" ] && security find-identity | grep -q "$IDENTITY"; then
   # Sparkle ships with several binaries that need to be codesigned by us, otherwise the whole bundle will be invalid.
-  codesign --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/Sparkle"
-  codesign --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/Autoupdate"
-  codesign --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/Updater.app"
-  codesign --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/XPCServices/Installer.xpc"
-  codesign --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/XPCServices/Downloader.xpc"
-  
+  codesign_with_retry --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/Sparkle"
+  codesign_with_retry --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/Autoupdate"
+  codesign_with_retry --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/Updater.app"
+  codesign_with_retry --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/XPCServices/Installer.xpc"
+  codesign_with_retry --deep --force -o runtime --sign "$IDENTITY" "${app}/Contents/Frameworks/Sparkle.framework/XPCServices/Downloader.xpc"
+
   # now, codesign the whole app.
-  codesign --deep --force -o runtime --sign "$IDENTITY" "${app}"
+  codesign_with_retry --deep --force -o runtime --sign "$IDENTITY" "${app}"
   echo "Validating codesigning worked with codesign -vv --deep-verify:"
   codesign -vv --deep-verify "${app}"
 fi
