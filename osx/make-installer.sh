@@ -87,8 +87,12 @@ if [ -z "$GITHUB_REPOSITORY" ]; then
   luarocks-5.1 --local install lua-zip
 fi
 
+# macdeployqtfix.py is vendored alongside this script (see macdeployqtfix.LICENSE)
+# so packaging never depends on a network fetch - downloading it from
+# raw.githubusercontent.com intermittently failed with HTTP 429 and broke builds.
 if [ ! -f "macdeployqtfix.py" ]; then
-  wget https://raw.githubusercontent.com/arl/macdeployqtfix/master/macdeployqtfix.py
+  echo "ERROR: vendored macdeployqtfix.py is missing from $(pwd)" >&2
+  exit 1
 fi
 
 npm install -g appdmg
