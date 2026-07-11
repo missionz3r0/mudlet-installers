@@ -7,6 +7,9 @@ shopt -s expand_aliases
 # extract program name for message
 pgm=$(basename "$0")
 
+# resolve the script's own directory before any cd, while a relative $0 still works
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 release=""
 ptb=""
 
@@ -90,8 +93,8 @@ fi
 # macdeployqtfix.py is vendored alongside this script (see macdeployqtfix.LICENSE)
 # so packaging never depends on a network fetch - downloading it from
 # raw.githubusercontent.com intermittently failed with HTTP 429 and broke builds.
-if [ ! -f "macdeployqtfix.py" ]; then
-  echo "ERROR: vendored macdeployqtfix.py is missing from $(pwd)" >&2
+if [ ! -f "${SCRIPT_DIR}/macdeployqtfix.py" ]; then
+  echo "ERROR: vendored macdeployqtfix.py is missing from ${SCRIPT_DIR}" >&2
   exit 1
 fi
 
@@ -109,7 +112,7 @@ macdeployqt "${app}" $( [ -n "$DEBUG" ] && echo "-verbose=3" )
 
 # fix unfinished deployment of macdeployqt
 echo "Running macdeployqtfix"
-python macdeployqtfix.py "${app}/Contents/MacOS/Mudlet" "${QT_DIR}" $( [ -n "$DEBUG" ] && echo "--verbose" )
+python "${SCRIPT_DIR}/macdeployqtfix.py" "${app}/Contents/MacOS/Mudlet" "${QT_DIR}" $( [ -n "$DEBUG" ] && echo "--verbose" )
 
 # Bundle in dynamically loaded libraries
 # These will be manually fixed up because macdeployqtfix is not really designed to handle individual libraries.
