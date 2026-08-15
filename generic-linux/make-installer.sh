@@ -111,24 +111,13 @@ if [ -n "${QTDIR}" ]; then
           "${QTDIR}/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so" || exit
 fi
 
-# Bundle libssl.so so Mudlet works on platforms that only distribute
-# OpenSSL 1.1
-cp -L /usr/lib/x86_64-linux-gnu/libssl.so* \
-      build/lib/ || true
-cp -L /lib/x86_64-linux-gnu/libssl.so* \
-      build/lib/ || true
-if [ -z "$(ls build/lib/libssl.so*)" ]; then
-  echo "No OpenSSL libraries to copy found. Aborting..."
-  exit 1
-fi
-
 echo "Generating AppImage"
 ./squashfs-root/AppRun ./build/mudlet -appimage \
-  -executable=build/lib/rex_pcre2.so -executable=build/lib/zip.so \
-  -executable=build/lib/luasql/sqlite3.so -executable=build/lib/yajl.so \
+  -executable=build/lib/rex_pcre2.so \
+  -executable=build/lib/zip.so \
+  -executable=build/lib/luasql/sqlite3.so \
+  -executable=build/lib/yajl.so \
   -executable=build/lib/lpeg.so \
-  -executable=build/lib/libssl.so.1.1 \
-  -executable=build/lib/libssl.so.1.0.0 \
   -extra-plugins=texttospeech/libqttexttospeech_flite.so,texttospeech/libqttexttospeech_speechd.so,platforminputcontexts/libcomposeplatforminputcontextplugin.so,platforminputcontexts/libibusplatforminputcontextplugin.so,platforminputcontexts/libfcitxplatforminputcontextplugin.so
 
 
