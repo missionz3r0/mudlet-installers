@@ -111,6 +111,13 @@ if [ -n "${QTDIR}" ]; then
           "${QTDIR}/plugins/platforminputcontexts/libfcitxplatforminputcontextplugin.so" || exit
 fi
 
+# Bundle libssl.so.3 so Mudlet will consider it when looking for dependencies
+cp -L /usr/lib/x86_64-linux-gnu/libssl.so.3 \
+      build/lib/ || true
+if [ -z "$(ls build/lib/libssl.so.3)" ]; then
+  echo "WARNING: No OpenSSL libraries to copy found."
+fi
+
 echo "Generating AppImage"
 ./squashfs-root/AppRun ./build/mudlet -appimage \
   -executable=build/lib/rex_pcre2.so \
@@ -118,7 +125,12 @@ echo "Generating AppImage"
   -executable=build/lib/luasql/sqlite3.so \
   -executable=build/lib/yajl.so \
   -executable=build/lib/lpeg.so \
-  -extra-plugins=texttospeech/libqttexttospeech_flite.so,texttospeech/libqttexttospeech_speechd.so,platforminputcontexts/libcomposeplatforminputcontextplugin.so,platforminputcontexts/libibusplatforminputcontextplugin.so,platforminputcontexts/libfcitxplatforminputcontextplugin.so
+  -executable=build/lib/libssl.so.3 \
+  -extra-plugins=texttospeech/libqttexttospeech_flite.so,\
+texttospeech/libqttexttospeech_speechd.so,\
+platforminputcontexts/libcomposeplatforminputcontextplugin.so,\
+platforminputcontexts/libibusplatforminputcontextplugin.so,\
+platforminputcontexts/libfcitxplatforminputcontextplugin.so
 
 
 # Workaround for qtkeychain password storage issue #6730
